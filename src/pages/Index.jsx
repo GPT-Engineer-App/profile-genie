@@ -1,9 +1,13 @@
 import React, { useState } from "react";
-import { Box, Heading, Button, Text, VStack, Grid, Table, Thead, Tbody, Tr, Th, Td, TableContainer } from "@chakra-ui/react";
-import { FaRandom, FaUser } from "react-icons/fa";
+import { Box, Heading, Button, Text, VStack, Grid, Table, Thead, Tbody, Tr, Th, Td, TableContainer, Input, IconButton, Flex } from "@chakra-ui/react";
+import { FaRandom, FaUser, FaSearch } from "react-icons/fa";
+
+const PROFILES_PER_PAGE = 10;
 
 const Index = () => {
   const [profiles, setProfiles] = useState([]);
+  const [page, setPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const generateCPN = () => {
     const cpn = Math.floor(Math.random() * 1000000000)
@@ -34,12 +38,15 @@ const Index = () => {
     setProfiles([...profiles, newProfile]);
   };
 
+  const filteredProfiles = profiles.filter((profile) => {
+    const fullName = `${profile.firstName} ${profile.lastName}`.toLowerCase();
+    return fullName.includes(searchTerm.toLowerCase()) || profile.cpn.includes(searchTerm);
+  });
+
+  const paginatedProfiles = filteredProfiles.slice((page - 1) * PROFILES_PER_PAGE, page * PROFILES_PER_PAGE);
+
   return (
     <Box p={8}>
-      <Heading as="h1" size="xl" mb={8}>
-        CPN Profile Generator
-      </Heading>
-
       <Grid templateColumns="1fr 2fr" gap={8}>
         <VStack align="stretch" spacing={4}>
           <Button leftIcon={<FaUser />} colorScheme="blue" onClick={addProfile}>
@@ -51,6 +58,11 @@ const Index = () => {
         </VStack>
 
         <Box>
+          <Flex mb={4}>
+            <Input placeholder="Search by name or CPN" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} mr={2} />
+            <IconButton icon={<FaSearch />} aria-label="Search" />
+          </Flex>
+
           <TableContainer>
             <Table variant="simple">
               <Thead>
@@ -62,7 +74,7 @@ const Index = () => {
                 </Tr>
               </Thead>
               <Tbody>
-                {profiles.map((profile, index) => (
+                {paginatedProfiles.map((profile, index) => (
                   <Tr key={index}>
                     <Td>{profile.firstName}</Td>
                     <Td>{profile.lastName}</Td>
@@ -73,7 +85,16 @@ const Index = () => {
               </Tbody>
             </Table>
           </TableContainer>
-          {profiles.length === 0 && <Text mt={4}>No profiles generated yet.</Text>}
+          {filteredProfiles.length === 0 && <Text mt={4}>No profiles found.</Text>}
+
+          <Flex justify="space-between" mt={4}>
+            <Button onClick={() => setPage((prevPage) => Math.max(prevPage - 1, 1))} disabled={page === 1}>
+              Previous
+            </Button>
+            <Button onClick={() => setPage((prevPage) => prevPage + 1)} disabled={page * PROFILES_PER_PAGE >= filteredProfiles.length}>
+              Next
+            </Button>
+          </Flex>
         </Box>
       </Grid>
     </Box>
